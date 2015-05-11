@@ -47,29 +47,6 @@ $settings->add(
     new admin_setting_configcheckbox('taskchain_enablecache', get_string('enablecache', 'mod_taskchain'), get_string('configenablecache', 'mod_taskchain').' '.$link, 1)
 );
 
-// restrict cron job to certain hours of the day (default=never)
-if (class_exists('core_date') && method_exists('core_date', 'get_user_timezone')) {
-    // Moodle >= 2.9
-    $timezone = core_date::get_user_timezone(99);
-    $datetime = new DateTime('now', new DateTimeZone($timezone));
-    $timezone = ($datetime->getOffset() - dst_offset_on(time(), $timezone)) / (3600.0);
-} else {
-    // Moodle <= 2.8
-    $timezone = get_user_timezone_offset();
-}
-if (abs($timezone) > 13) {
-    $timezone = 0;
-} else if ($timezone > 0) {
-    $timezone = $timezone - 24;
-}
-$options = array();
-for ($i=0; $i<=23; $i++) {
-    $options[($i - $timezone) % 24] = gmdate('H:i', $i * HOURSECS);
-}
-$settings->add(
-    new admin_setting_configmultiselect('taskchain_enablecron', get_string('enablecron', 'mod_taskchain'), get_string('configenablecron', 'mod_taskchain'), array(), $options)
-);
-
 // enable embedding of swf media objects intaskchain tasks (default=1)
 $settings->add(
     new admin_setting_configcheckbox('taskchain_enableswf', get_string('enableswf', 'mod_taskchain'), get_string('configenableswf', 'mod_taskchain'), 1)
@@ -115,5 +92,5 @@ $setting->set_updatedcallback('taskchain_refresh_events');
 $settings->add($setting);
 
 // dispose of temporary variables used above
-unset($str, $url, $link, $timezone, $datetime, $options, $i);
+unset($str, $url, $link, $options, $i);
 
