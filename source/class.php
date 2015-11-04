@@ -303,6 +303,83 @@ class taskchain_source {
         return array($result);
     }
 
+    /**
+     * returns an array of taskchain_source objects if $filename is a head of a task chain, or false otherwise
+     *
+     * @param xxx $data
+     * @param xxx $context
+     * @param xxx $component
+     * @param xxx $filearea
+     * @param xxx $gettaskchain
+     * @return xxx
+     * @todo Finish documenting this function
+     */
+    static public function get_sources_from_taskchain(&$data, $context, $component, $filearea, $gettaskchain)  {
+        $sources = array();
+
+        if (! $file = taskchain_pluginfile_mainfile($context, $component, $filearea)) {
+            return false;
+        }
+
+        while ($file && ($task = self::is('is_taskfile', $file, $data))) {
+
+            // add this task
+            $sources[] = $task;
+
+            if ($gettaskchain) {
+                // get next task (if any)
+                if ($file = $task->get_nexttask($context, $component, $filearea)) {
+                    // to prevent infinite loops on chains, we check that
+                    // the next task is not one of the earlier tasks
+                    foreach ($sources as $source) {
+                        if ($source->filepath==$file->filepath) {
+                            $file = false;
+                        }
+                    }
+                }
+            } else {
+                // force end of loop
+                $file = false;
+            }
+        }
+
+        if (count($sources)) {
+            return $sources;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * get_sources_from_chainfile
+     *
+     * @return xxx
+     * @todo Finish documenting this function
+     */
+    static public function get_sources_from_chainfile(&$data, $context, $component, $filearea)  {
+        $sources = array();
+
+        if (! $mainfile = taskchain_pluginfile_mainfile($context, $component, $filearea)) {
+            return false;
+        }
+
+        if (! $files = self::is('is_chainfile', $mainfile, $data)) {
+            return false;
+        }
+
+        foreach ($files as $file) {
+            if ($task = self::is('is_taskfile', $file, $data)) {
+                $sources[] = $task;
+            }
+        }
+
+        if (count($sources)) {
+            return $sources;
+        } else {
+            return false;
+        }
+    }
+
     /*
      * This function will return either an array of task files
      * within this filearea, or false if there are no such files
@@ -316,6 +393,18 @@ class taskchain_source {
         if (! $mainfile = taskchain_pluginfile_mainfile($context, $component, $filearea)) {
             return false;
         }
+
+        // if the $mainfile was a zip or tgz file, unpack it
+        if ($mimetype = self::get_file_packer_mimetype($mainfile)) {
+            $mainfile->extract_to_storage(get_file_packer($mimetype),
+                                          $mainfile->get_contextid(),
+                                          $mainfile->get_component(),
+                                          $mainfile->get_filearea(),
+                                          $mainfile->get_itemid(),
+                                          $mainfile->get_filepath());
+            $recursive = true;
+        }
+
         if (! $directory = $mainfile->get_parent_directory()) {
             return false;
         }
@@ -334,13 +423,16 @@ class taskchain_source {
         }
 
         // TODO: we need a way to find out if we are updating
-        $is_update = (false);
+        // 2015-09-13 this boolean flag doesn't appear to be necessary because
+        //            we never come this way when updating a TaskChain or task
+        // $is_update = (false);
 
         $sources = array();
         foreach ($files as $file) {
-            if ($is_update && $mainfile->get_source()==$file->get_source()) {
-                continue; // this is the $mainfile
-            }
+            // 2015-09-13 this if-block doesn't appear to be necessary
+            // if ($is_update && $mainfile->get_source()==$file->get_source()) {
+            //     continue; // this is the $mainfile
+            // }
             if ($result = self::is('is_taskfile', $file, $data)) {
                 $sources[] = $result;
             }
@@ -355,6 +447,23 @@ class taskchain_source {
         }
     }
 
+    /*
+     * Given a stored file, this function will return either
+     * a mimetype that can be passed to the Moodle file_packer
+     * or, if the $file is not a packed file, an empty string
+     *
+     * @return string
+     */
+    static public function get_file_packer_mimetype($file) {
+        $filetype = $file->get_filename();
+        $filetype = substr($filetype, -4);
+        $filetype = strtolower($filetype);
+        switch ($filetype) {
+            case '.zip': return 'application/zip';
+            case '.tgz': return 'application/x-tgz';
+        }
+        return ''; // not recognized as a packed file
+    }
 
     /**
      * appends taskchain_source objects to $sources for any sources that are found in the external chainfolder
@@ -516,83 +625,6 @@ class taskchain_source {
                     $file->delete(); // not a task file
                 }
             }
-        }
-    }
-
-    /**
-     * returns an array of taskchain_source objects if $filename is a head of a task chain, or false otherwise
-     *
-     * @param xxx $data
-     * @param xxx $context
-     * @param xxx $component
-     * @param xxx $filearea
-     * @param xxx $gettaskchain
-     * @return xxx
-     * @todo Finish documenting this function
-     */
-    static public function get_sources_from_taskchain(&$data, $context, $component, $filearea, $gettaskchain)  {
-        $sources = array();
-
-        if (! $file = taskchain_pluginfile_mainfile($context, $component, $filearea)) {
-            return false;
-        }
-
-        while ($file && ($task = self::is('is_taskfile', $file, $data))) {
-
-            // add this task
-            $sources[] = $task;
-
-            if ($gettaskchain) {
-                // get next task (if any)
-                if ($file = $task->get_nexttask($context, $component, $filearea)) {
-                    // to prevent infinite loops on chains, we check that
-                    // the next task is not one of the earlier tasks
-                    foreach ($sources as $source) {
-                        if ($source->filepath==$file->filepath) {
-                            $file = false;
-                        }
-                    }
-                }
-            } else {
-                // force end of loop
-                $file = false;
-            }
-        }
-
-        if (count($sources)) {
-            return $sources;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * get_sources_from_chainfile
-     *
-     * @return xxx
-     * @todo Finish documenting this function
-     */
-    static public function get_sources_from_chainfile(&$data, $context, $component, $filearea)  {
-        $sources = array();
-
-        if (! $mainfile = taskchain_pluginfile_mainfile($context, $component, $filearea)) {
-            return false;
-        }
-
-        if (! $files = self::is('is_chainfile', $mainfile, $data)) {
-            return false;
-        }
-
-        foreach ($files as $file) {
-            if ($task = self::is('is_taskfile', $file, $data)) {
-                $sources[] = $task;
-            }
-        }
-
-        if (count($sources)) {
-            return $sources;
-        } else {
-            return false;
         }
     }
 

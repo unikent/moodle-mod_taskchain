@@ -54,12 +54,12 @@ defined('MOODLE_INTERNAL') || die();
  */
 function taskchain_supports($feature) {
     $constants = array(
-        'FEATURE_ADVANCED_GRADING' => true, // default=false
+        'FEATURE_ADVANCED_GRADING' => false,
         'FEATURE_BACKUP_MOODLE2'   => true, // default=false
         'FEATURE_COMMENT'          => true,
         'FEATURE_COMPLETION_HAS_RULES' => true,
         'FEATURE_COMPLETION_TRACKS_VIEWS' => true,
-        'FEATURE_CONTROLS_GRADE_VISIBILITY' => true,
+        'FEATURE_CONTROLS_GRADE_VISIBILITY' => false,
         'FEATURE_GRADE_HAS_GRADE'  => true, // default=false
         'FEATURE_GRADE_OUTCOMES'   => true,
         'FEATURE_GROUPINGS'        => true, // default=false
@@ -678,9 +678,10 @@ function taskchain_get_coursemodule_info($cm) {
     //$info->iconurl =       '';
 
     if (isset($cm->showdescription) && $cm->showdescription) {
-        // $context = context_module::instance($cm->id);
         $context = mod_taskchain::context(CONTEXT_MODULE, $cm->id); // Moodle 2.0 - 2.1
-        $options = array('noclean'=>true, 'para'=>false, 'filter'=>true, 'context'=>$context, 'overflowdiv'=>true);
+        // Note: "filter" must be set to false, so that filters are run only at display time.
+        // Setting "filter" to true, will cause an infinite loop when recreating the course cache.
+        $options = array('noclean' => true, 'para' => false, 'filter' => false, 'context' => $context, 'overflowdiv' => true);
         $entrytext = file_rewrite_pluginfile_urls($chain->entrytext, 'pluginfile.php', $context->id, 'mod_taskchain', 'entry', null);
         $info->content = trim(format_text($entrytext, $chain->entryformat, $options, null));
     }
@@ -1972,9 +1973,14 @@ function taskchain_pluginfile_mainfile($context, $component, $filearea, $itemid=
     // the main file for this TaskChain activity
     // (file with lowest sortorder in $filearea)
     $mainfile = false;
+    $mainfile_is_empty = true;
+    $mainfile_is_archive = false;
 
     // these file types can't be the mainfile
     $media_filetypes = array('fla', 'flv', 'gif', 'jpeg', 'jpg', 'mp3', 'png', 'swf', 'wav');
+
+    // tgz and zip files will only be used as a last resort
+    $archive_filetypes = array('tgz', 'zip');
 
     $area_files = $fs->get_area_files($context->id, $component, $filearea, $itemid); // , 'sortorder, filename', 0
     foreach ($area_files as $file) {
@@ -1989,14 +1995,31 @@ function taskchain_pluginfile_mainfile($context, $component, $filearea, $itemid=
         if (in_array($filetype, $media_filetypes)) {
             continue; // media file
         }
-        if (empty($mainfile)) { // || $mainfile->get_content()==''
-            $mainfile = $file;
+        if ($file_is_archive = in_array($filetype, $archive_filetypes)) {
+            // only use an archive file if
+            // if it is the first file found
+            $update = $mainfile_is_empty;
+        } else if ($mainfile_is_empty) {
+            // always use a non-archive file
+            // if it is the first file found
+            $update = true;
         } else if ($file->get_sortorder()==0) {
-            // unsorted file - do nothing
+            // always use an unsorted file
+            // if the mainfile is an archive file
+            $update = $mainfile_is_archive;
         } else if ($mainfile->get_sortorder()==0) {
-            $mainfile = $file;
+            // always use a sorted file
+            // if the mainfile is an unsorted file
+            $update = true;
         } else if ($file->get_sortorder() < $mainfile->get_sortorder()) {
+            // always use a sorted file (i.e. sortorder > 0)
+            // if its sortorder is lower than the sortorder of the mainfile
+            $update = true;
+        }
+        if ($update) {
             $mainfile = $file;
+            $mainfile_is_empty = false;
+            $mainfile_is_archive = $file_is_archive;
         }
     }
 
@@ -2628,6 +2651,7 @@ function taskchain_set_missing_fields($table, &$record, &$formdata, $fieldnames)
  */
 function taskchain_get_completion_state($course, $cm, $userid, $type) {
     global $CFG, $DB;
+    require_once($CFG->dirroot.'/mod/taskchain/locallib.php');
 
     // set default return $state
     $state = $type;
@@ -2637,7 +2661,7 @@ function taskchain_get_completion_state($course, $cm, $userid, $type) {
 
         // get grade, if necessary
         $grade = false;
-        if ($taskchain->completionmingrade || $taskchain->completionpassed) {
+        if ($taskchain->completionmingrade || $taskchain->completionpass) {
             require_once($CFG->dirroot.'/lib/gradelib.php');
             $params = array('courseid'     => $course->id,
                             'itemtype'     => 'mod',
@@ -2655,7 +2679,7 @@ function taskchain_get_completion_state($course, $cm, $userid, $type) {
 
         // the TaskChain completion conditions
         $conditions = array('completionmingrade',
-                            'completionpassed',
+                            'completionpass',
                             'completioncompleted');
 
         foreach ($conditions as $condition) {
@@ -2666,10 +2690,10 @@ function taskchain_get_completion_state($course, $cm, $userid, $type) {
                 case 'completionmingrade':
                     $state = ($grade && $grade->finalgrade >= $taskchain->completionmingrade);
                     break;
-                case 'completionpassed':
+                case 'completionpass':
                     $state = ($grade && $grade->is_passed());
                     break;
-                case 'completionmingrade':
+                case 'completioncompleted':
                     require_once($CFG->dirroot.'/mod/taskchain/locallib.php');
                     $params = array('parenttype' => mod_taskchain::PARENTTYPE_ACTIVITY,
                                     'parentid'   => $cm->instance,

@@ -57,7 +57,7 @@ $string['taskchain:view'] = 'View the entry page of a TaskChain activity';
 $string['configbodystyles'] = 'By default, Moodle theme styles will override TaskChain activity styles. However, for any styles selected here, the TaskChain activity styles, including any styles defined in task source files such as Hot Potatoes files, will be given priority over the Moodle theme styles.';
 $string['configenablecache'] = 'Maintaining a cache of TaskChain tasks can dramatically speed up the delivery of tasks to the students.';
 $string['configenablemymoodle'] = 'This settings controls whether TaskChains are listed on the MyMoodle page or not';
-$string['configenableobfuscate'] = 'Obfuscating the javascript code to insert media players makes it more difficult to determine the media file name and guess what the file contains.';
+$string['configenableobfuscate'] = 'Obfuscating the text strings and URLs in javascript code makes it more difficult to guess answers by viewing the source of the HTML page in the browser.';
 $string['configenableswf'] = 'Allow embedding of SWF files in TaskChain activities. If enabled, this setting overrides filter_mediaplugin_enable_swf.';
 $string['configfile'] = 'Configuration file';
 $string['configfile_help'] = 'If specified, the configuration file will be used when the browser content is generated from the source file.
@@ -360,7 +360,7 @@ $string['columnliststasks'] = 'Column lists for editing tasks';
 $string['completed'] = 'Completed';
 $string['completioncompleted'] = 'Require completed status';
 $string['completionmingrade'] = 'Require minimum grade';
-$string['completionpassed'] = 'Require passing grade';
+$string['completionpass'] = 'Require passing grade';
 $string['completionwarning'] = 'These fields are disabled if the grade limit for this activity is "No grade" or the grade weighting is "No weighting"';
 $string['conditions'] = 'Conditions';
 $string['conditionscore'] = 'Condition score';
@@ -408,8 +408,8 @@ $string['delay2summary'] = 'Time delay between later attempts';
 $string['delay3'] = 'Delay 3';
 $string['delay3_help'] = 'The setting specifies the delay between finishing the task and returning control of the display to Moodle.
 
-**Use specific time (in seconds)**
-: control will be returned to Moodle after the specified number of seconds.
+**Use specific delay**
+: control will be returned to Moodle after the specified delay.
 
 **Use settings in source/template file**
 : control will be returned to Moodle after the number of seconds specified in the source file or the template files for this output format.
@@ -423,7 +423,7 @@ $string['delay3_help'] = 'The setting specifies the delay between finishing the 
 Note, the task results are always returned to Moodle immediately the task is completed or abandoned, regardless of this setting.';
 $string['delay3afterok'] = 'Wait till student clicks OK';
 $string['delay3disable'] = 'Do not continue automatically';
-$string['delay3specific'] = 'Use specific time (in seconds)';
+$string['delay3specific'] = 'Use specific delay';
 $string['delay3summary'] = 'Time delay at the end of the task';
 $string['delay3template'] = 'Use settings in source/template file';
 $string['deleteallattempts'] = 'Delete all attempts';
@@ -448,7 +448,7 @@ $string['editcolumnliststask'] = 'Edit columns for TaskChain Tasks';
 $string['edittasks'] = 'Edit tasks';
 $string['enablecache'] = 'Enable TaskChain cache';
 $string['enablemymoodle'] = 'Show TaskChains on MyMoodle';
-$string['enableobfuscate'] = 'Enable obfuscation of media player code';
+$string['enableobfuscate'] = 'Enable obfuscation of text and media players';
 $string['enableswf'] = 'Allow embedding of SWF files in TaskChain activities';
 $string['endofchain'] = 'End of chain';
 $string['entry_attempts'] = 'Attempts';
@@ -829,15 +829,17 @@ $string['outputformat_help'] = 'The output format specifies how the content will
 The output formats that are available depend on the type of the source file. Some types of source file have just one output format, while other types of source file have several output formats.
 
 The "best" setting will display the content using the optimal output format for the student\'s browser.';
+$string['outputformat_hp_6_jcloze_html_findit_a'] = 'FindIt (a) from HP6 JCloze html';
+$string['outputformat_hp_6_jcloze_html_findit_b'] = 'FindIt (b) from HP6 JCloze html';
 $string['outputformat_hp_6_jcloze_html'] = 'JCloze (v6) from html';
-$string['outputformat_hp_6_jcloze_xml_anctscan'] = 'ANCT-Scan from HP6 JCloze xml';
 $string['outputformat_hp_6_jcloze_xml_anctscan_autoadvance'] = 'ANCT-Scan from HP6 JCloze xml (Auto-advance)';
+$string['outputformat_hp_6_jcloze_xml_anctscan'] = 'ANCT-Scan from HP6 JCloze xml';
 $string['outputformat_hp_6_jcloze_xml_dropdown'] = 'DropDown from HP6 JCloze xml';
 $string['outputformat_hp_6_jcloze_xml_findit_a'] = 'FindIt (a) from HP6 JCloze xml';
 $string['outputformat_hp_6_jcloze_xml_findit_b'] = 'FindIt (b) from HP6 JCloze xml';
 $string['outputformat_hp_6_jcloze_xml_jgloss'] = 'JGloss from HP6 JCloze xml';
-$string['outputformat_hp_6_jcloze_xml_v6'] = 'JCloze (v6) from HP6 xml';
 $string['outputformat_hp_6_jcloze_xml_v6_autoadvance'] = 'JCloze (v6) from HP6 xml (Auto-advance)';
+$string['outputformat_hp_6_jcloze_xml_v6'] = 'JCloze (v6) from HP6 xml';
 $string['outputformat_hp_6_jcross_xml_v6'] = 'JCross (v6) from xml';
 $string['outputformat_hp_6_jmatch_html'] = 'JMatch (v6) from html';
 $string['outputformat_hp_6_jmatch_xml_flashcard'] = 'JMatch (flashcard) from xml';

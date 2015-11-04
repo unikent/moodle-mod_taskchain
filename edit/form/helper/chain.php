@@ -904,7 +904,7 @@ class taskchain_form_helper_chain extends taskchain_form_helper_record {
                 if (isset($data->{$editorfield}['text'])) {
                     // get the text that was sent from the browser
                     $options = mod_taskchain::filearea_options();
-                    $text = file_save_draft_area_files($itemid, $this->context->id, 'mod_hotpot', $type, 0, $options, $data->{$editorfield}['text']);
+                    $text = file_save_draft_area_files($itemid, $this->context->id, 'mod_taskchain', $type, 0, $options, $data->{$editorfield}['text']);
 
                     // remove leading and trailing white space,
                     //  - empty html paragraphs (from IE)
@@ -1143,32 +1143,6 @@ class taskchain_form_helper_chain extends taskchain_form_helper_record {
     }
 
     /**
-     * format_longtext
-     *
-     * if activity name is longer than $textlength, it will be truncated
-     * to first $headlength chars + " ... " + last $taillength chars
-     *
-     * @param string $text of activity
-     * @param integer $textlength (optional, default=40)
-     * @param integer $headlength (optional, default=16)
-     * @param integer $taillength (optional, default=16)
-     * @param string formatted name, possibly truncated to $textlength chars
-     * @todo Finish documenting this function
-     */
-     protected function format_longtext($text, $textlength=40, $headlength=16, $taillength=16) {
-        $text = format_string($text);
-        $strlen = mod_taskchain::textlib('strlen', $text);
-        if ($strlen > $textlength) {
-            $headlength = min($headlength, $strlen);
-            $taillength = min($taillength, $strlen - $headlength - 3);
-            $head = mod_taskchain::textlib('substr', $text, 0, $headlength);
-            $tail = mod_taskchain::textlib('substr', $text, $strlen - $taillength, $taillength);
-            $text = $head.' ... '.$tail;
-        }
-        return $text;
-     }
-
-    /**
      * format_template_cm
      *
      * @param string name of $field
@@ -1182,12 +1156,13 @@ class taskchain_form_helper_chain extends taskchain_form_helper_record {
         if ($value < 0) {
             return $this->format_templatevalue_list($field, $value, 'cm', $type);
         }
-        $modinfo = unserialize($this->TC->courserecord->modinfo);
-        if ($modinfo && isset($modinfo->cms[$value])) {
-            $name = $modinfo->cms[$value]->name;
-            return $this->format_longtext($name);
+        if (! $modinfo = get_fast_modinfo($this->TC->course)) {
+            return ''; // no mods - shouldn't happen !!
         }
-        return $value; // shouldn't happen !!
+        if (! $cm = $modinfo->get_cm($value)) {
+            return ''; // invalid $value - shouldn't happen !!
+        }
+        return $this->format_longtext($cm->name);
     }
 
     /**
